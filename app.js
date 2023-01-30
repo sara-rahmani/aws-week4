@@ -1,10 +1,16 @@
 // const express = require('express')
 // const multer = require('multer')
 //const fs = require('fs')
+//import {uploadImage} from './s3.js'
+import * as s3 from "./s3.js";
+import crypto from 'crypto'
+
+const generateFileName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex')
 
 import express  from 'express'
 import multer from 'multer'
  import fs from 'fs'
+
 //  import path from 'path';
 //  import { fileURLToPath } from 'url';
  
@@ -14,7 +20,10 @@ import multer from 'multer'
  import {addImage,getImages} from './database.js'
 const app = express()
 //multer
-const upload = multer({ dest: 'images/' })
+//const upload = multer({ dest: 'images/' })-->
+//-->
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
 
 //json
 app.use(express.json())
@@ -23,19 +32,42 @@ app.use(express.urlencoded({extended :true}))
 app.use("/images",express.static("./images"))
 
 //app.use('/api/images', express.static('images'))
-app.use(express.static("build"));
+app.use(express.static("dist"));
 
 app.get("/api/images", async(req, res) => {
-  const result = await getImages()
-  res.send(result)
+  const images = await getImages()
+  //
+  for (const image of images) {
+    image.url = await s3.getSignedUrl(image.file_name)
+  }
+
+  res.send(images)
 })
 
 app.post('/api/images',upload.single('sara'), async (req, res) => {
   console.log(req.body);
   console.log(req.file);
-  try{    const description = req.body.description
-       const filePath =req.file.path
-     const result = await addImage(filePath,description)
+  try{   
+    //GET DATA FROM THE POST REQUEST
+     const description = req.body.description
+      // const filePath =req.file.path-->
+    //  const fileName = "a_file_name"-->
+    const fileName = generateFileName()
+
+       const fileBuffer = req.file.buffer
+       const mimetype = req.file.mimetype
+       //PROCESS IMAGE
+       
+    //  const images=fileName+  "_450"
+    //  const imagem=fileName+  "_600"
+    //  const imagel=fileName+  "_900"
+
+       
+       //save to s3
+       const s3Result = await s3.uploadImage(fileBuffer, fileName, mimetype)
+       console.log(s3Result);
+       //save to db
+     const result = await addImage(fileName,description)
      res.send(result)
 
      // res.redirect("/");
@@ -45,6 +77,7 @@ app.post('/api/images',upload.single('sara'), async (req, res) => {
       }
 //    res.send("hellooo")
   })
+  //delete this
 app.get('images/:imageName',async (req,res)=>{
 
     //store data in database
@@ -59,10 +92,22 @@ app.get('images/:imageName',async (req,res)=>{
     const readStream = fs.createReadStream(`images/${imageName}`)
     readStream.pipe(res)
 })
+
+// app.get("/api/images/:id/delete", async(req, res) => {
+//   const id = +req.params.id
+// console.log(id);
+//   try{
+// await deleteImage(id)
+// res.redirect("/api/images")
+// } catch (error) {
+//   console.error(error)
+//   res.sendStatus(500)
+// }
+// })
 // After all other routes
 app.get('*', (req, res) => {
-//  res.sendFile('dist/index.html');
-  res.sendFile('build/index.html', { root: '.' });
+  //res.sendFile('dist/index.html');
+  res.sendFile('dist/index.html', { root: '.' });
 
 });
 const port = process.env.PORT || 8080
