@@ -17,7 +17,7 @@ import multer from 'multer'
 //  const __filename = fileURLToPath(import.meta.url);
  
 //  const __dirname = path.dirname(__filename);
- import {addImage,getImages} from './database.js'
+ import {addImage,getImages,getImage,deleteImage} from './database.js'
 const app = express()
 //multer
 //const upload = multer({ dest: 'images/' })-->
@@ -77,21 +77,7 @@ app.post('/api/images',upload.single('sara'), async (req, res) => {
       }
 //    res.send("hellooo")
   })
-  //delete this
-app.get('images/:imageName',async (req,res)=>{
-
-    //store data in database
-    //deploy to a cloud service
-    
-    //diff btw deploying code and deploying persistance code
-    const imageName = req.params.imageName
-   // const description = req.body.description
-    // const filePath =req.file.path
-    // const result = await addImage(filePath,description)
-    // res.send(result)
-    const readStream = fs.createReadStream(`images/${imageName}`)
-    readStream.pipe(res)
-})
+ 
 
 // app.get("/api/images/:id/delete", async(req, res) => {
 //   const id = +req.params.id
@@ -104,6 +90,21 @@ app.get('images/:imageName',async (req,res)=>{
 //   res.sendStatus(500)
 // }
 // })
+app.delete("/api/images/:id", async (req, res) => {
+  const id = +req.params.id
+  console.log(id);
+  const image = await getImage(id) 
+console.log(image);
+ 
+await s3.deleteImageFile(image.file_name)
+  try{
+    const result = await deleteImage(id)
+    res.send(result)
+    } catch (error) {
+      console.error(error)
+      res.sendStatus(500)
+    }
+})
 // After all other routes
 app.get('*', (req, res) => {
   //res.sendFile('dist/index.html');

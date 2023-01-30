@@ -49,12 +49,13 @@ export async function addImage(file_name, description) {
 
   return await getImage(id)
 }
+
 //exports.addImage = addImage
-// export async function deleteImage(id) {
-//   const [result] = await pool.query(`
-//   DELETE FROM images
-//   WHERE file_name = ?
-//   `, [id])
-//   return result
+export async function deleteImage(id) {
+  const [result] = await pool.query(`
+  DELETE FROM images
+  WHERE id = ?
+  `, [id])
+  return result
   
-// }
+}

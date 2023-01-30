@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand,DeleteObjectCommand } from "@aws-sdk/client-s3"
 import { GetObjectCommand } from "@aws-sdk/client-s3"
 import * as presigner from "@aws-sdk/s3-request-presigner"
 import dotenv from 'dotenv'
@@ -46,13 +46,11 @@ export async function uploadImage(imageBuffer, imageName, mimetype) {
     return signedUrl
   }
   
-  // export async function deleteFile(fileName){
-  //   const command = new GetObjectCommand({
-  //     Bucket: bucketName,
-  //     Key: fileName
-  //   })
+  export async function deleteImageFile(fileName){
+    const deleteParams = {
+      Bucket: bucketName,
+      Key: fileName,
+    }
   
-  //   await presigner.(s3Client, command, { expiresIn: 60 * 60 * 24 })
-  
-  //   return signedUrl
-  // }
+    return  s3Client.send(new DeleteObjectCommand(deleteParams))
+  } 
