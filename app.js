@@ -111,5 +111,5 @@ app.get('*', (req, res) => {
   res.sendFile('dist/index.html', { root: '.' });
 
 });
-const port = process.env.PORT || 8080
+const port = 8081
 app.listen(port, () => console.log(`listening on port ${port}`))
